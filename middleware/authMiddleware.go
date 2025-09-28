@@ -16,17 +16,15 @@ func Authentication() gin.HandlerFunc {
 			return
 		}
 
-		claims, err := helper.VerifyToken(clientToken)
-		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		claims, err := helper.ValidateToken(clientToken)
+		if err != "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err})
 			c.Abort()
 			return
 		}
 
 		c.Set("uid", claims.Uid)
 		c.Set("email", claims.Email)
-		c.set("first_name", claims.First_name)
-		c.set("last_name", claims.Last_name)
 		c.Set("user_type", claims.User_type)
 		c.Next()
 	}

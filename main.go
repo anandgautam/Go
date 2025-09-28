@@ -20,13 +20,13 @@ func main() {
 	routes.AuthRoutes(router)
 	routes.UserRoutes(router)
 
-	routes.GET("/api-1ping", func(c *gin.Context) {
+	router.GET("/api-1ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"success": "Access Granted for API 1",
 		})
 	})
 
-	routes.GET("/api-2", func(c *gin.Context) {
+	router.GET("/api-2", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"success": "Access Granted for API 2",
 		})

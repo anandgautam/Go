@@ -2,9 +2,10 @@ package helper
 
 import (
 	"context"
-	"go-jwt-project/database"
 	"os"
 	"time"
+
+	"github.com/anandgautam/Go/go-jwt-project/database"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"go.mongodb.org/mongo-driver/bson"
@@ -22,7 +23,7 @@ type SignedDetails struct {
 	jwt.StandardClaims
 }
 
-var UserCollection *mongo.Collection = database.OpenCollection(database.GetClient(), "users")
+var UserCollection *mongo.Collection = database.OpenCollection(database.Client, "users")
 var SECRET_KEY string = os.Getenv("SECRET_KEY")
 
 func GenerateAllTokens(email string, firstName string, lastName string, userType string, uid string) (signedToken string, signedRefreshToken string, err error) {
@@ -105,7 +106,7 @@ func ValidateToken(signedToken string) (claims *SignedDetails, msg string) {
 		return nil, msg
 	}
 
-	if claims.ExpiresAt < 15000 {
+	if claims.StandardClaims.ExpiresAt < 15000 {
 		msg = "token is expired"
 		return nil, msg
 	}

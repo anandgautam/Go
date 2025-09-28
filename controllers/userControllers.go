@@ -3,7 +3,9 @@ package controllers
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/anandgautam/Go/go-jwt-project/database"
@@ -126,7 +128,7 @@ func Login() gin.HandlerFunc {
 		token, refreshToken, _ := helper.GenerateAllTokens(*foundUser.Email, *foundUser.First_name, *foundUser.Last_name, *foundUser.User_type, *foundUser.User_id)
 
 		helper.UpdateAllTokens(token, refreshToken, *foundUser.User_id)
-		err = UserCollection.FoundOne(ctx, bson.M{"user_id": foundUser.User_id}).Decode(&foundUser)
+		err = UserCollection.FindOne(ctx, bson.M{"user_id": foundUser.User_id}).Decode(&foundUser)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error occurred while fetching user details"})
@@ -136,8 +138,8 @@ func Login() gin.HandlerFunc {
 		foundUser.Token = &token
 		foundUser.Refresh_token = &refreshToken
 
-		// c.SetCookie("token", token, 3600*24, "/", "localhost", false, true)
-		// c.SetCookie("refresh_token", refreshToken, 3600*24*7, "/", "localhost", false, true)
+		c.SetCookie("token", token, 3600*24, "/", "localhost", false, true)
+		c.SetCookie("refresh_token", refreshToken, 3600*24*7, "/", "localhost", false, true)
 		c.JSON(200, gin.H{
 			"success": "Login Endpoint",
 		})
@@ -146,7 +148,7 @@ func Login() gin.HandlerFunc {
 
 func GetUsers() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		helper.CheckUserType(c, "ADMIN"); err != nil {
+		if err := helper.CheckUserType(c, "ADMIN"); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
@@ -168,13 +170,13 @@ func GetUsers() gin.HandlerFunc {
 			{Key: "_id", Value: bson.D{{Key: "_id", Value: "null"}}},
 			{Key: "total_count", Value: bson.D{{Key: "$sum", Value: 1}}},
 			{Key: "data", Value: bson.D{{Key: "$push", Value: "$$ROOT"}}},
-		}}}		
-		
+		}}}
+
 		projectStage := bson.D{{Key: "$project", Value: bson.D{
 			{Key: "_id", Value: 0},
 			{Key: "total_count", Value: 1},
 			{Key: "user_items", Value: bson.D{{Key: "$slice", Value: []interface{}{"$data", startIndex, recordPerPage}}}},
-		}}}		
+		}}}
 		result, err := UserCollection.Aggregate(ctx, mongo.Pipeline{matchStage, groupStage, projectStage})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error occurred while listing the users"})
@@ -187,9 +189,7 @@ func GetUsers() gin.HandlerFunc {
 		c.JSON(http.StatusOK, allUsers[0])
 	}
 
-		
 }
-
 
 func GetUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
